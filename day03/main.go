@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"os"
 	"strings"
 )
@@ -40,6 +41,40 @@ func findMaxJoltage(bank string) int {
 	return tens*10 + ones
 }
 
+// findMaxJoltageNBatteries finds the maximum n-digit joltage by selecting
+// exactly n batteries from the bank. Uses a greedy monotonic stack approach.
+func findMaxJoltageNBatteries(bank string, n int) string {
+	if len(bank) < n || n <= 0 {
+		return ""
+	}
+
+	// If we need all batteries, return the whole string
+	if len(bank) == n {
+		return bank
+	}
+
+	// We need to skip (len(bank) - n) batteries to keep exactly n
+	toRemove := len(bank) - n
+	stack := make([]byte, 0, n)
+
+	for i := 0; i < len(bank); i++ {
+		digit := bank[i]
+
+		// While we can still remove digits and current digit is larger than stack top,
+		// pop from stack to make room for the larger digit
+		for len(stack) > 0 && toRemove > 0 && digit > stack[len(stack)-1] {
+			stack = stack[:len(stack)-1]
+			toRemove--
+		}
+
+		stack = append(stack, digit)
+	}
+
+	// If we still need to remove digits (all remaining are equal/ascending),
+	// remove from the end
+	return string(stack[:n])
+}
+
 func run(filename string) (int, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -62,12 +97,44 @@ func run(filename string) (int, error) {
 	return total, nil
 }
 
-func main() {
-	result, err := run("./input/input.txt")
+func runPart2(filename string) (*big.Int, error) {
+	content, err := os.ReadFile(filename)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	fmt.Printf("Total output joltage: %v\n", result)
+	lines := strings.Split(string(content), "\n")
+	total := new(big.Int)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		joltageStr := findMaxJoltageNBatteries(line, 12)
+		joltage := new(big.Int)
+		joltage.SetString(joltageStr, 10)
+		total.Add(total, joltage)
+	}
+
+	return total, nil
+}
+
+func main() {
+	// Part 1
+	result, err := run("./input/input.txt")
+	if err != nil {
+		fmt.Printf("Error (Part 1): %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Part 1 - Total output joltage: %v\n", result)
+
+	// Part 2
+	result2, err := runPart2("./input/input.txt")
+	if err != nil {
+		fmt.Printf("Error (Part 2): %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Part 2 - Total output joltage: %v\n", result2)
 }

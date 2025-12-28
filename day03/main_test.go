@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"math/big"
+	"os"
+	"testing"
+)
 
 func TestFindMaxJoltage(t *testing.T) {
 	tests := []struct {
@@ -90,5 +94,86 @@ func TestFindMaxJoltageEdgeCases(t *testing.T) {
 				t.Errorf("findMaxJoltage(%q) = %d, expected %d", tt.bank, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestFindMaxJoltageNBatteries(t *testing.T) {
+	tests := []struct {
+		name     string
+		bank     string
+		n        int
+		expected string
+	}{
+		{
+			name:     "Part 2 Example 1",
+			bank:     "987654321111111",
+			n:        12,
+			expected: "987654321111",
+		},
+		{
+			name:     "Part 2 Example 2",
+			bank:     "811111111111119",
+			n:        12,
+			expected: "811111111119",
+		},
+		{
+			name:     "Part 2 Example 3",
+			bank:     "234234234234278",
+			n:        12,
+			expected: "434234234278",
+		},
+		{
+			name:     "Part 2 Example 4",
+			bank:     "818181911112111",
+			n:        12,
+			expected: "888911112111",
+		},
+		{
+			name:     "Select all",
+			bank:     "123",
+			n:        3,
+			expected: "123",
+		},
+		{
+			name:     "Select 2 from part 1 examples",
+			bank:     "987654321111111",
+			n:        2,
+			expected: "98",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := findMaxJoltageNBatteries(tt.bank, tt.n)
+			if result != tt.expected {
+				t.Errorf("findMaxJoltageNBatteries(%q, %d) = %s, expected %s", tt.bank, tt.n, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestRunPart2(t *testing.T) {
+	// Test with the example input
+	example := `987654321111111
+811111111111119
+234234234234278
+818181911112111`
+
+	// Create temp file for testing
+	tmpfile := t.TempDir() + "/test_input.txt"
+	if err := os.WriteFile(tmpfile, []byte(example), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := runPart2(tmpfile)
+	if err != nil {
+		t.Fatalf("runPart2 failed: %v", err)
+	}
+
+	expected := new(big.Int)
+	expected.SetString("3121910778619", 10)
+
+	if result.Cmp(expected) != 0 {
+		t.Errorf("runPart2() = %s, expected %s", result.String(), expected.String())
 	}
 }
